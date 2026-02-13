@@ -42,7 +42,7 @@ jobs:
     - name: Workaround https://github.com/bazelbuild/bazel/issues/18592
       run: rm -Recurse -Force "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\vcpkg" -ErrorAction Continue
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         submodules: true
 
@@ -56,7 +56,7 @@ jobs:
         rm cuda.7z
         ls D:/CUDA/v${{ matrix.cuda-version }}
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v4
       with:
         path: ~\AppData\Local\pip\Cache
         key: ${{ runner.os }}-pip-${{ hashFiles('build-requirements.txt') }}
@@ -67,7 +67,7 @@ jobs:
     # Python 3.11 #
     #=============#
     - name: py311
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: "3.11"
     - name: py311 pip install
@@ -87,7 +87,7 @@ jobs:
     # Python 3.10 #
     #=============#
     - name: py310
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: "3.10"
     - name: py310 pip install
@@ -107,7 +107,7 @@ jobs:
     # Python 3.9 #
     #============#
     - name: py39
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: "3.9"
     - name: py39 pip install
@@ -131,9 +131,9 @@ jobs:
     env:
       AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: py311
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: "3.11"
     - name: update index.html
