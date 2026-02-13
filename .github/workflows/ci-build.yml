@@ -78,9 +78,9 @@ jobs:
         cd "$env:GITHUB_WORKSPACE/jax"
         ../build-jaxlib.ps1 cuda -bazel_path $env:BAZEL_PATH -vs_version 2022 -cuda_version '${{ matrix.cuda-version }}' -cuda_prefix 'D:/CUDA' -symlink_python
         az storage blob upload-batch --overwrite -d unstable -s "$env:GITHUB_WORKSPACE/jax/bazel-dist" --pattern '*.whl'
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: whls
+        name: whls-py311-cuda${{ matrix.cuda-version }}
         path: jax/bazel-dist/**/*.whl
 
     #=============#
@@ -98,9 +98,9 @@ jobs:
         cd "$env:GITHUB_WORKSPACE/jax"
         ../build-jaxlib.ps1 cuda -bazel_path $env:BAZEL_PATH -vs_version 2022 -cuda_version '${{ matrix.cuda-version }}' -cuda_prefix 'D:/CUDA' -symlink_python
         az storage blob upload-batch --overwrite -d unstable -s "$env:GITHUB_WORKSPACE/jax/bazel-dist" --pattern '*.whl'
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: whls
+        name: whls-py310-cuda${{ matrix.cuda-version }}
         path: jax/bazel-dist/**/*.whl
 
     #============#
@@ -118,9 +118,9 @@ jobs:
         cd "$env:GITHUB_WORKSPACE/jax"
         ../build-jaxlib.ps1 cuda -bazel_path $env:BAZEL_PATH -vs_version 2022 -cuda_version '${{ matrix.cuda-version }}' -cuda_prefix 'D:/CUDA' -symlink_python
         az storage blob upload-batch --overwrite -d unstable -s "$env:GITHUB_WORKSPACE/jax/bazel-dist" --pattern '*.whl'
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: whls
+        name: whls-py39-cuda${{ matrix.cuda-version }}
         path: jax/bazel-dist/**/*.whl
 
   update-index:
