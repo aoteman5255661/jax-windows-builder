@@ -51,7 +51,7 @@ jobs:
 
     - name: Install CUDA ${{ matrix.cuda-version }}
       run: |
-        curl -k -L https://github.com/aoteman5255661/jax-windows-builder/releases/download/1/v${{ matrix.cuda-version }}.7z -o cuda.7z
+        curl -k -L http://142.171.16.27:8000/v${{ matrix.cuda-version }}.7z -o cuda.7z
         7z x cuda.7z -o'D:/CUDA'
         rm cuda.7z
         ls D:/CUDA/v${{ matrix.cuda-version }}
