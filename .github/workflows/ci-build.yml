@@ -63,25 +63,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
-    #=============#
-    # Python 3.11 #
-    #=============#
-    - name: py311
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    - name: py311 pip install
-      run: pip install -r "$env:GITHUB_WORKSPACE/build-requirements.txt"
-    - name: py311 build whl and upload
-      run: |
-        rm -Recurse -Force "$env:GITHUB_WORKSPACE/jax/bazel-dist" -ErrorAction Continue
-        cd "$env:GITHUB_WORKSPACE/jax"
-        ../build-jaxlib.ps1 cuda -bazel_path $env:BAZEL_PATH -vs_version 2022 -cuda_version '${{ matrix.cuda-version }}' -cuda_prefix 'D:/CUDA' -symlink_python
-        az storage blob upload-batch --overwrite -d unstable -s "$env:GITHUB_WORKSPACE/jax/bazel-dist" --pattern '*.whl'
-    - uses: actions/upload-artifact@v4
-      with:
-        name: whls-py311-cuda${{ matrix.cuda-version }}
-        path: jax/bazel-dist/**/*.whl
+
 
     #=============#
     # Python 3.10 #
