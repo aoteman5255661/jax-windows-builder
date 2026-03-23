@@ -28,28 +28,56 @@ function Set-VSEnv {
 
     $vs_where = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe'
 
+    if (-not (Test-Path $vs_where)) {
+        throw "vswhere.exe not found at '$vs_where'"
+    }
+
     $version_range = switch ($Version) {
         2022 { '[17,18)' }
         2019 { '[16,17)' }
         2017 { '[15,16)' }
     }
-    $info = &$vs_where -version $version_range -format json | ConvertFrom-Json
+
+    $info = &$vs_where `
+        -version $version_range `
+        -latest `
+        -products * `
+        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+        -format json | ConvertFrom-Json
+
+    if ($info -is [System.Array]) {
+        $info = $info[0]
+    }
+
     $vs_env = @{
-        install_path = if ($null -ne $info) { $info[0].installationPath } else { $null }
+        install_path = if ($null -ne $info) { $info.installationPath } else { $null }
         all          = 'Common7\Tools\VsDevCmd.bat'
         x64          = 'VC\Auxiliary\Build\vcvars64.bat'
         x86          = 'VC\Auxiliary\Build\vcvars32.bat'
     }
     if ( $null -eq $vs_env.install_path) {
-        Write-Host -ForegroundColor Red "Visual Studio $Version is not installed."
-        return
+        throw "Visual Studio $Version with C++ build tools is not installed."
     }
 
     $path = Join-Path $vs_env.install_path $vs_env.$Arch
 
+    if (-not (Test-Path $path)) {
+        throw "Visual Studio environment script not found: $path"
+    }
+
     C:/Windows/System32/cmd.exe /c "`"$path`" & set" | Set-EnvFromCmdSet
+
+    if (-not $env:VCINSTALLDIR) {
+        throw "VCINSTALLDIR was not set by $path"
+    }
+
+    $cl = Get-Command cl.exe -ErrorAction SilentlyContinue
+    if ($null -eq $cl) {
+        throw "cl.exe was not found after loading Visual Studio $Version $Arch environment."
+    }
+
     Set-Item -Force -Path "Env:\BAZEL_VC" -Value "$env:VCINSTALLDIR"
-    Write-Host -ForegroundColor Green "Visual Studio $Version $Arch Command Prompt variables set."
+    Write-Host -ForegroundColor Green "Visual Studio $Version $Arch Command Prompt variables set. cl.exe at $($cl.Source)"
 }
 
 
