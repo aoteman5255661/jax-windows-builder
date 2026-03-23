@@ -76,8 +76,25 @@ function Set-VSEnv {
         throw "cl.exe was not found after loading Visual Studio $Version $Arch environment."
     }
 
-    Set-Item -Force -Path "Env:\BAZEL_VC" -Value "$env:VCINSTALLDIR"
+    if (-not $env:VSINSTALLDIR) {
+        throw "VSINSTALLDIR was not set by $path"
+    }
+
+    if (-not $env:VCToolsVersion) {
+        throw "VCToolsVersion was not set by $path"
+    }
+
+    $bazelVc = ([System.IO.Path]::GetFullPath($env:VCINSTALLDIR)).TrimEnd('\')
+    $bazelVs = ([System.IO.Path]::GetFullPath($env:VSINSTALLDIR)).TrimEnd('\')
+    $bazelVcFullVersion = $env:VCToolsVersion.TrimEnd('\')
+
+    Set-Item -Force -Path "Env:\BAZEL_VS" -Value "$bazelVs"
+    Set-Item -Force -Path "Env:\BAZEL_VC" -Value "$bazelVc"
+    Set-Item -Force -Path "Env:\BAZEL_VC_FULL_VERSION" -Value "$bazelVcFullVersion"
     Write-Host -ForegroundColor Green "Visual Studio $Version $Arch Command Prompt variables set. cl.exe at $($cl.Source)"
+    Write-Host -ForegroundColor Green "BAZEL_VS=$bazelVs"
+    Write-Host -ForegroundColor Green "BAZEL_VC=$bazelVc"
+    Write-Host -ForegroundColor Green "BAZEL_VC_FULL_VERSION=$bazelVcFullVersion"
 }
 
 

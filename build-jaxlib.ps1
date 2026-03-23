@@ -42,6 +42,21 @@ param(
 . (Join-Path (Split-Path $MyInvocation.MyCommand.Path) functions.ps1)
 $ErrorActionPreference = "Stop"
 
+function Add-BazelRepoEnv {
+    param(
+        [Parameter(Mandatory = $true)]
+        [String]$Name
+    )
+
+    $value = [Environment]::GetEnvironmentVariable($Name)
+    if ([String]::IsNullOrWhiteSpace($value)) {
+        return
+    }
+
+    $escaped = $value.Replace("\", "/")
+    echo ('common --repo_env ' + $Name + '="' + $escaped + '"') >> .bazelrc.user
+}
+
 # path for patch.exe and realpath.exe
 $msys2_path = "C:\msys64\usr\bin"
 
@@ -109,6 +124,9 @@ try {
     }
 
     echo 'try-import %workspace%/../windows_configure.bazelrc' > .bazelrc.user
+    Add-BazelRepoEnv BAZEL_VS
+    Add-BazelRepoEnv BAZEL_VC
+    Add-BazelRepoEnv BAZEL_VC_FULL_VERSION
 
     if ($bazel_jobs -gt 0) {
         echo "build --jobs=${bazel_jobs}" >> .bazelrc.user
