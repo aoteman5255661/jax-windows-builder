@@ -112,6 +112,24 @@ try {
 
     if ($vs_version -ne "") {
         Set-VSEnv $vs_version
+
+        # Bazel 6.1.2's _is_vs_2017_or_2019 (loaded from @bazel_tools//tools/cpp:windows_cc_configure.bzl)
+        # requires the VC directory to contain EXACTLY [Auxiliary, Redist, Tools]. Recent VS 2022
+        # updates added extra subdirectories (e.g. vcpackages), causing the check to return False.
+        # When False, find_msvc_tool falls back to the VS 2015 path layout (VC\bin\x64\cl.exe)
+        # which does not exist in VS 2022, so it returns None and the CUDA repo rule fails.
+        # Fix: create a junction-based proxy VC root containing only the three expected entries.
+        $realVc = $env:BAZEL_VC
+        $fakeVc = "D:\bazel_vc_root"
+        Remove-Item $fakeVc -Recurse -Force -ErrorAction 0
+        New-Item -ItemType Directory $fakeVc | Out-Null
+        foreach ($dir in @("Auxiliary", "Redist", "Tools")) {
+            $src = Join-Path $realVc $dir
+            if (Test-Path $src) {
+                New-Item -ItemType Junction -Path (Join-Path $fakeVc $dir) -Target $src | Out-Null
+            }
+        }
+        Set-Item -Force -Path "Env:\BAZEL_VC" -Value $fakeVc
     }
     if ($bazel_vc_full_version -ne "") {
         $env:BAZEL_VC_FULL_VERSION = $bazel_vc_full_version
