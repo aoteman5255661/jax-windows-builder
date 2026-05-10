@@ -32,7 +32,7 @@ jobs:
     - name: Show memory info
       run: Get-CimInstance Win32_PhysicalMemory | Format-Table Tag, DeviceLocator, Capacity, Speed
     - name: Configure pagefile
-      uses: al-cheb/configure-pagefile-action@v1.2
+      uses: al-cheb/configure-pagefile-action@v1.5
       with:
         minimum-size: 8GB
         maximum-size: 32GB
@@ -42,7 +42,7 @@ jobs:
     - name: Workaround https://github.com/bazelbuild/bazel/issues/18592
       run: rm -Recurse -Force "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\vcpkg" -ErrorAction Continue
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: true
 
@@ -56,7 +56,7 @@ jobs:
         rm cuda.7z
         ls D:/CUDA/v${{ matrix.cuda-version }}
 
-    - uses: actions/cache@v4
+    - uses: actions/cache@v5
       with:
         path: ~\AppData\Local\pip\Cache
         key: ${{ runner.os }}-pip-${{ hashFiles('build-requirements.txt') }}
@@ -69,7 +69,7 @@ jobs:
     # Python 3.10 #
     #=============#
     - name: py310
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: "3.10"
     - name: py310 pip install
@@ -80,7 +80,7 @@ jobs:
         cd "$env:GITHUB_WORKSPACE/jax"
         ../build-jaxlib.ps1 cuda -bazel_path $env:BAZEL_PATH -vs_version 2022 -cuda_version '${{ matrix.cuda-version }}' -cuda_prefix 'D:/CUDA' -symlink_python
         az storage blob upload-batch --overwrite -d unstable -s "$env:GITHUB_WORKSPACE/jax/bazel-dist" --pattern '*.whl'
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: whls-py310-cuda${{ matrix.cuda-version }}
         path: jax/bazel-dist/**/*.whl
@@ -89,7 +89,7 @@ jobs:
     # Python 3.9 #
     #============#
     - name: py39
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: "3.9"
     - name: py39 pip install
@@ -100,7 +100,7 @@ jobs:
         cd "$env:GITHUB_WORKSPACE/jax"
         ../build-jaxlib.ps1 cuda -bazel_path $env:BAZEL_PATH -vs_version 2022 -cuda_version '${{ matrix.cuda-version }}' -cuda_prefix 'D:/CUDA' -symlink_python
         az storage blob upload-batch --overwrite -d unstable -s "$env:GITHUB_WORKSPACE/jax/bazel-dist" --pattern '*.whl'
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: whls-py39-cuda${{ matrix.cuda-version }}
         path: jax/bazel-dist/**/*.whl
@@ -113,9 +113,9 @@ jobs:
     env:
       AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: py311
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: "3.11"
     - name: update index.html

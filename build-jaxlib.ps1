@@ -132,6 +132,13 @@ try {
         echo "build --jobs=${bazel_jobs}" >> .bazelrc.user
     }
 
+    # CUDA 11.8 rejects newer Visual Studio 2022/MSVC toolsets shipped on
+    # GitHub-hosted windows-2022 runners. Keep using the hosted compiler but
+    # pass nvcc's documented override so CI can continue to build CUDA 11.8.
+    if (($build_type -eq 'cuda') -and ($cuda_version -eq '11.8') -and ($vs_version -eq '2022')) {
+        echo 'build:cuda --copt=-nvcc_options=allow-unsupported-compiler' >> .bazelrc.user
+    }
+
     if (Test-Path $xla_submodule) {
         Write-Host -ForegroundColor Yellow "Use xla submodule " $xla_submodule
         echo ('build:windows --override_repository=xla=' + $xla_submodule.Replace("\", "/")) >> .bazelrc.user
