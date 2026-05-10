@@ -113,22 +113,34 @@ try {
     if ($vs_version -ne "") {
         Set-VSEnv $vs_version
 
-        # Bazel 6.1.2's _is_vs_2017_or_2019 (loaded from @bazel_tools//tools/cpp:windows_cc_configure.bzl)
-        # requires the VC directory to contain EXACTLY [Auxiliary, Redist, Tools]. Recent VS 2022
-        # updates added extra subdirectories (e.g. vcpackages), causing the check to return False.
-        # When False, find_msvc_tool falls back to the VS 2015 path layout (VC\bin\x64\cl.exe)
-        # which does not exist in VS 2022, so it returns None and the CUDA repo rule fails.
-        # Fix: create a junction-based proxy VC root containing only the three expected entries.
+        # Bazel 6.1.2's _is_vs_2017_or_2019 requires the VC directory to contain EXACTLY
+        # [Auxiliary, Redist, Tools]. Recent VS 2022 updates added extra subdirectories
+        # (e.g. vcpackages), so the check returns False and find_msvc_tool falls back to
+        # the VS 2015 path layout (VC\bin\x64\cl.exe) which doesn't exist, returning None.
+        #
+        # Fix: create a proxy VC root D:\bazel_vc_root with exactly those three entries.
+        # - Redist and Tools are junctions to the real directories (cl.exe resolves through them).
+        # - Auxiliary is a real directory containing only a VCVARSALL.BAT wrapper that calls
+        #   the real bat via its absolute path, so %~dp0 expansion inside VCVARSALL.BAT
+        #   still points to the real VS installation and all env vars (INCLUDE, LIB, ...) are set.
         $realVc = $env:BAZEL_VC
         $fakeVc = "D:\bazel_vc_root"
         Remove-Item $fakeVc -Recurse -Force -ErrorAction 0
         New-Item -ItemType Directory $fakeVc | Out-Null
-        foreach ($dir in @("Auxiliary", "Redist", "Tools")) {
+
+        foreach ($dir in @("Redist", "Tools")) {
             $src = Join-Path $realVc $dir
             if (Test-Path $src) {
                 New-Item -ItemType Junction -Path (Join-Path $fakeVc $dir) -Target $src | Out-Null
             }
         }
+
+        $fakeAuxBuild = Join-Path $fakeVc "Auxiliary\Build"
+        New-Item -ItemType Directory $fakeAuxBuild -Force | Out-Null
+        $realVcVarsAll = Join-Path $realVc "Auxiliary\Build\VCVARSALL.BAT"
+        "@echo off`r`ncall `"$realVcVarsAll`" %*`r`n" |
+            Set-Content -Path (Join-Path $fakeAuxBuild "VCVARSALL.BAT") -Encoding ASCII
+
         Set-Item -Force -Path "Env:\BAZEL_VC" -Value $fakeVc
     }
     if ($bazel_vc_full_version -ne "") {
