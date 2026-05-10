@@ -53,7 +53,7 @@ function Add-BazelRepoEnv {
         return
     }
 
-    $escaped = $value.Replace("\", "/")
+    $escaped = $value.Replace("\", "\\")
     echo ('common --repo_env ' + $Name + '="' + $escaped + '"') >> .bazelrc.user
 }
 
