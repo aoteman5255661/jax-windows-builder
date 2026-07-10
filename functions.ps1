@@ -88,6 +88,26 @@ function Set-VSEnv {
     $bazelVs = ([System.IO.Path]::GetFullPath($env:VSINSTALLDIR)).TrimEnd('\')
     $bazelVcFullVersion = $env:VCToolsVersion.TrimEnd('\')
 
+    # Older Bazel/TensorFlow CUDA repository rules only recognize VS 2017/2019
+    # VC paths when resolving cl.exe. GitHub-hosted runners now provide VS 2022,
+    # so expose the same VC tree through a junction with "2019" in the path.
+    if (($Version -eq 2022) -and ($bazelVc -notmatch '2017|2019')) {
+        $compatRoot = Join-Path ([System.IO.Path]::GetTempPath()) 'bazel_vs2019_compat'
+        $compatVc = Join-Path $compatRoot 'VC'
+        Remove-Item $compatRoot -Recurse -Force -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Path $compatRoot -Force | Out-Null
+        C:/Windows/System32/cmd.exe /c "mklink /J `"$compatVc`" `"$bazelVc`"" | Out-Host
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to create Bazel VS 2019 compatibility junction at $compatVc"
+        }
+        $bazelVc = ([System.IO.Path]::GetFullPath($compatVc)).TrimEnd('\')
+    }
+
+    $bazelCl = Join-Path $bazelVc "Tools\MSVC\$bazelVcFullVersion\bin\HostX64\x64\cl.exe"
+    if (-not (Test-Path $bazelCl)) {
+        throw "Bazel MSVC compiler path does not exist: $bazelCl"
+    }
+
     Set-Item -Force -Path "Env:\BAZEL_VS" -Value "$bazelVs"
     Set-Item -Force -Path "Env:\BAZEL_VC" -Value "$bazelVc"
     Set-Item -Force -Path "Env:\BAZEL_VC_FULL_VERSION" -Value "$bazelVcFullVersion"
